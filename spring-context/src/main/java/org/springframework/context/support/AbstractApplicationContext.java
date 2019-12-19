@@ -521,31 +521,45 @@ public abstract class AbstractApplicationContext extends DefaultResourceLoader
 			ConfigurableListableBeanFactory beanFactory = obtainFreshBeanFactory();
 
 			// Prepare the bean factory for use in this context.
+			// todo::设置一些beanFactory的属性 像factoryBean注册了需要的BeanPostProcessor
 			prepareBeanFactory(beanFactory);
 
 			try {
 				// Allows post-processing of the bean factory in context subclasses.
+				// todo::普通的applicationContext貌似什么都不做，特定的上下文才做？？?
 				postProcessBeanFactory(beanFactory);
 
 				// Invoke factory processors registered as beans in the context.
+				// todo::执行BeanFactoryPostProcessor级别的PostProcessor 实现了 BeanFactoryProcessor 接口
+				//  扫描Bean，将需要的bean放入beanDefinitionMap中
 				invokeBeanFactoryPostProcessors(beanFactory);
 
 				// Register bean processors that intercept bean creation.
+				// todo::注册了很多PostProcessor，以用于后续的实例化和初始化
+				//   我们自己的也能够注册进去，前提是交给Spring容器管理 eg:被@Component修饰
 				registerBeanPostProcessors(beanFactory);
 
 				// Initialize message source for this context.
 				initMessageSource();
 
 				// Initialize event multicaster for this context.
+				// todo::实例化事件发布器，默认为SimpleApplicationEventMulticaster
 				initApplicationEventMulticaster();
 
 				// Initialize other special beans in specific context subclasses.
+				//todo::特殊的上下文环境才需要执行？
 				onRefresh();
 
 				// Check for listener beans and register them.
+				// todo::注册实现 ApplicationListener 接口的类(所以必须交给容器，能扫描到)，
+				//  但不实例化，只是注册到发布器中，下一步才实例化
 				registerListeners();
 
 				// Instantiate all remaining (non-lazy-init) singletons.
+				// todo::在此方法中实例化我们自己定义的bean，@lazy和非单例的不实例化
+				//  有些spring的bean已经在singletonObjects中实例化了
+				//  singletonObjects中全是bean 而不是Object
+				//  bean:完整的走完了整个spring bean生命周期的Object 其他的半成品只能称之为object
 				finishBeanFactoryInitialization(beanFactory);
 
 				// Last step: publish corresponding event.
@@ -649,6 +663,7 @@ public abstract class AbstractApplicationContext extends DefaultResourceLoader
 		beanFactory.addPropertyEditorRegistrar(new ResourceEditorRegistrar(this, getEnvironment()));
 
 		// Configure the bean factory with context callbacks.
+		// todo::注意这些beanPostProcessor的作用 注册第一个BeanPostProcessor
 		beanFactory.addBeanPostProcessor(new ApplicationContextAwareProcessor(this));
 		beanFactory.ignoreDependencyInterface(EnvironmentAware.class);
 		beanFactory.ignoreDependencyInterface(EmbeddedValueResolverAware.class);
@@ -665,16 +680,19 @@ public abstract class AbstractApplicationContext extends DefaultResourceLoader
 		beanFactory.registerResolvableDependency(ApplicationContext.class, this);
 
 		// Register early post-processor for detecting inner beans as ApplicationListeners.
+		// todo::第2个beanPostProcessor
 		beanFactory.addBeanPostProcessor(new ApplicationListenerDetector(this));
 
 		// Detect a LoadTimeWeaver and prepare for weaving, if found.
 		if (beanFactory.containsBean(LOAD_TIME_WEAVER_BEAN_NAME)) {
+			// todo::第3个beanPostProcessor 试情况而定
 			beanFactory.addBeanPostProcessor(new LoadTimeWeaverAwareProcessor(beanFactory));
 			// Set a temporary ClassLoader for type matching.
 			beanFactory.setTempClassLoader(new ContextTypeMatchClassLoader(beanFactory.getBeanClassLoader()));
 		}
 
 		// Register default environment beans.
+		// todo::注册3个environment beans
 		if (!beanFactory.containsLocalBean(ENVIRONMENT_BEAN_NAME)) {
 			beanFactory.registerSingleton(ENVIRONMENT_BEAN_NAME, getEnvironment());
 		}
@@ -761,6 +779,9 @@ public abstract class AbstractApplicationContext extends DefaultResourceLoader
 	 */
 	protected void initApplicationEventMulticaster() {
 		ConfigurableListableBeanFactory beanFactory = getBeanFactory();
+		// todo::如果已经有一个bean或者beanDefinition是applicationEventMulticaster
+		// 则spring会用这个发布器，不会用默认的SimpleApplicationEventMulticaster，
+		// 所以我们可以通过往beanFactory注册一个此名字的发布器用来覆盖原有的
 		if (beanFactory.containsLocalBean(APPLICATION_EVENT_MULTICASTER_BEAN_NAME)) {
 			this.applicationEventMulticaster =
 					beanFactory.getBean(APPLICATION_EVENT_MULTICASTER_BEAN_NAME, ApplicationEventMulticaster.class);
@@ -827,6 +848,8 @@ public abstract class AbstractApplicationContext extends DefaultResourceLoader
 
 		// Do not initialize FactoryBeans here: We need to leave all regular beans
 		// uninitialized to let post-processors apply to them!
+		// todo::这里才将我们自定义的实现ApplicationListener的类添加到发布器中(典型的发布-订阅模式)
+		// todo::但并没有实例化, 只在beanDefinitionMap中，但并不在singleObjects, 和我们自己定义的bean一起实例化
 		String[] listenerBeanNames = getBeanNamesForType(ApplicationListener.class, true, false);
 		for (String listenerBeanName : listenerBeanNames) {
 			getApplicationEventMulticaster().addApplicationListenerBean(listenerBeanName);

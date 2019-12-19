@@ -106,6 +106,8 @@ public class ProxyProcessorSupport extends ProxyConfig implements Ordered, BeanC
 		boolean hasReasonableProxyInterface = false;
 		for (Class<?> ifc : targetInterfaces) {
 			if (!isConfigurationCallbackInterface(ifc) && !isInternalLanguageInterface(ifc) &&
+					// todo::需要这个接口不是空接口，至少有一个方法
+					// 即:如果某个类实现的的接口是空接口，则AOP代理类仍然会用CGLIB代理
 					ifc.getMethods().length > 0) {
 				hasReasonableProxyInterface = true;
 				break;

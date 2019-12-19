@@ -84,7 +84,12 @@ public class AnnotationConfigApplicationContext extends GenericApplicationContex
 	 * {@link Configuration @Configuration} classes
 	 */
 	public AnnotationConfigApplicationContext(Class<?>... componentClasses) {
+		// todo::此类继承了GenericApplicationContext，需要代用父类的构造方法
+		// new 一个DefaultListableBeanFactory
+
+		// todo::注册spring开天辟地就存在的bean
 		this();
+		// 将你传进来的class注册到BeanDefinitionMap
 		register(componentClasses);
 		refresh();
 	}
