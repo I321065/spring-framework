@@ -821,10 +821,15 @@ public class DefaultListableBeanFactory extends AbstractAutowireCapableBeanFacto
 		List<String> beanNames = new ArrayList<>(this.beanDefinitionNames);
 
 		// Trigger initialization of all non-lazy singleton beans...
+		// todo:: 主要的实例化逻辑  遍历beanDefinitionNames(BeanDefinitionMap的key)中的所有bean
 		for (String beanName : beanNames) {
 			RootBeanDefinition bd = getMergedLocalBeanDefinition(beanName);
+			// 不是抽象类 && 单例 && 不是懒加载
 			if (!bd.isAbstract() && bd.isSingleton() && !bd.isLazyInit()) {
 				if (isFactoryBean(beanName)) {
+					// todo:: 非常重要的方法  因为factoryBean如果想获取factoryBean本身,需要加&前缀，
+					//  直接getBean(beanName)会获取到真正对象的bean <T>
+					//	而不是factoryBean对象
 					Object bean = getBean(FACTORY_BEAN_PREFIX + beanName);
 					if (bean instanceof FactoryBean) {
 						final FactoryBean<?> factory = (FactoryBean<?>) bean;
@@ -839,17 +844,20 @@ public class DefaultListableBeanFactory extends AbstractAutowireCapableBeanFacto
 									((SmartFactoryBean<?>) factory).isEagerInit());
 						}
 						if (isEagerInit) {
+							// todo:: 非常重要的方法
 							getBean(beanName);
 						}
 					}
 				}
 				else {
+					// todo:: 非常重要的方法
 					getBean(beanName);
 				}
 			}
 		}
 
 		// Trigger post-initialization callback for all applicable beans...
+		// todo:: 此处处理不关心是不是单列，抽象类等等
 		for (String beanName : beanNames) {
 			Object singletonInstance = getSingleton(beanName);
 			if (singletonInstance instanceof SmartInitializingSingleton) {
